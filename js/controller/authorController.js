@@ -8,23 +8,31 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Author } from "../model/authorModel.js";
+import { sequelize } from "../config/dbConnect.js";
 export const createAuthor = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const transaction = yield sequelize.transaction();
     try {
         const { first_name, last_name } = req.body;
         if (!first_name || !last_name) {
+            yield transaction.rollback();
+            console.log('rollback transaction');
             res.status(400).send({
                 success: false,
                 message: "Both first_name and last_name are required.",
             });
             return;
         }
-        const author = yield Author.create({ first_name, last_name });
+        const author = yield Author.create({ first_name, last_name }, { transaction });
+        yield transaction.commit();
+        console.log('commit transaction');
         res.status(200).send({
             message: "Author created successfully",
             data: author
         });
     }
     catch (error) {
+        yield transaction.rollback();
+        console.log('rollback transaction');
         res.status(500).send({
             success: false,
             error,
@@ -47,9 +55,12 @@ export const getAllAuthor = (req, res) => __awaiter(void 0, void 0, void 0, func
     }
 });
 export const updateAuthor = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const transaction = yield sequelize.transaction();
     try {
         const id = req.params.id;
         if (!id) {
+            yield transaction.rollback();
+            console.log('rollback transaction');
             res.status(400).send({
                 success: false,
                 message: "Author ID is required."
@@ -59,8 +70,11 @@ export const updateAuthor = (req, res) => __awaiter(void 0, void 0, void 0, func
         const author = yield Author.update({ first_name: "John Doe", last_name: "Smith" }, {
             where: {
                 author_id: id
-            }
+            },
+            transaction
         });
+        yield transaction.commit();
+        console.log('commit transaction');
         res.status(200).send({
             message: "Author details updated successfully",
             success: true,
@@ -68,6 +82,8 @@ export const updateAuthor = (req, res) => __awaiter(void 0, void 0, void 0, func
         });
     }
     catch (error) {
+        yield transaction.rollback();
+        console.log('rollback transaction');
         res.status(500).send({
             success: false,
             error,
@@ -75,9 +91,12 @@ export const updateAuthor = (req, res) => __awaiter(void 0, void 0, void 0, func
     }
 });
 export const deleteAuthor = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const transaction = yield sequelize.transaction();
     try {
         const id = req.params.id;
         if (!id) {
+            yield transaction.rollback();
+            console.log('rollback transaction');
             res.status(400).send({
                 success: false,
                 message: "Author ID is required."
@@ -87,8 +106,11 @@ export const deleteAuthor = (req, res) => __awaiter(void 0, void 0, void 0, func
         const author = yield Author.destroy({
             where: {
                 author_id: id
-            }
+            },
+            transaction
         });
+        yield transaction.commit();
+        console.log('commit transaction');
         res.status(200).send({
             message: "Author deleted successfully",
             success: true,
@@ -96,6 +118,8 @@ export const deleteAuthor = (req, res) => __awaiter(void 0, void 0, void 0, func
         });
     }
     catch (error) {
+        yield transaction.rollback();
+        console.log('rollback transaction');
         res.status(500).send({
             success: false,
             error,

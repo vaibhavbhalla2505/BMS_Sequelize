@@ -8,23 +8,31 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Book } from "../model/bookModel.js";
+import { sequelize } from "../config/dbConnect.js";
 export const createBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const transaction = yield sequelize.transaction();
     try {
         const { title, publication_date, price, author_id, category_id, isbn } = req.body;
         if (!title || !publication_date || !price || !author_id || !category_id || !isbn) {
+            yield transaction.rollback();
+            console.log('rollback transaction');
             res.status(400).send({
                 success: false,
                 message: "All fields are required.",
             });
             return;
         }
-        const book = yield Book.create({ title, publication_date, price, author_id, category_id, isbn });
+        const book = yield Book.create({ title, publication_date, price, author_id, category_id, isbn }, { transaction });
+        yield transaction.commit();
+        console.log('commit transaction');
         res.status(200).send({
             message: "Book created successfully",
             data: book
         });
     }
     catch (error) {
+        yield transaction.rollback();
+        console.log('rollback transaction');
         res.status(500).send({
             success: false,
             error,
@@ -47,9 +55,12 @@ export const getAllBooks = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 export const updateBookDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const transaction = yield sequelize.transaction();
     try {
         const ISBN = req.params.id;
         if (!ISBN) {
+            yield transaction.rollback();
+            console.log('rollback transaction');
             res.status(400).send({
                 success: false,
                 message: "ISBN is required",
@@ -59,8 +70,11 @@ export const updateBookDetails = (req, res) => __awaiter(void 0, void 0, void 0,
         const book = yield Book.update({ title: "harry potter" }, {
             where: {
                 isbn: ISBN
-            }
+            },
+            transaction
         });
+        yield transaction.commit();
+        console.log('commit transaction');
         res.status(200).send({
             message: "Book details updated successfully",
             success: true,
@@ -68,6 +82,8 @@ export const updateBookDetails = (req, res) => __awaiter(void 0, void 0, void 0,
         });
     }
     catch (error) {
+        yield transaction.rollback();
+        console.log('rollback transaction');
         res.status(500).send({
             success: false,
             error,
@@ -75,9 +91,12 @@ export const updateBookDetails = (req, res) => __awaiter(void 0, void 0, void 0,
     }
 });
 export const deleteBookDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const transaction = yield sequelize.transaction();
     try {
         const ISBN = req.params.id;
         if (!ISBN) {
+            yield transaction.rollback();
+            console.log('rollback transaction');
             res.status(400).send({
                 success: false,
                 message: "ISBN is required",
@@ -87,8 +106,11 @@ export const deleteBookDetails = (req, res) => __awaiter(void 0, void 0, void 0,
         const book = yield Book.destroy({
             where: {
                 isbn: ISBN
-            }
+            },
+            transaction
         });
+        yield transaction.commit();
+        console.log('commit transaction');
         res.status(200).send({
             message: "Book details updated successfully",
             success: true,
@@ -96,6 +118,8 @@ export const deleteBookDetails = (req, res) => __awaiter(void 0, void 0, void 0,
         });
     }
     catch (error) {
+        yield transaction.rollback();
+        console.log('rollback transaction');
         res.status(500).send({
             success: false,
             error,
